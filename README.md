@@ -1,116 +1,257 @@
-# TestCase Homework
+# TestSuite Homework
 
-Вашата задача е да напишете модул с име `TestCase`, в който ще си дефинираме структура, която ще държи нашите тестове.
+Задачата е да напишете модул с име `TestSuite`, в който да дефинирате структура, която ще държи набор от тестове.
 
-Тестовете ни ще бъдат прости функции с арност 0 и ще имат 5 състояния:
+Тестовете са анонимни функции с арност 0.
+Тест се смята за неуспешен, след изпълнението си функцията върне `false`, `nil` или хвърли грешка.
+Ако функцията върне нещо резлично от `false` или `nil`, то той е успешен.
 
-  1. Преди да бъде пуснат - може да го бележим с `nil`
+Всъщност един тест може да има 5 различни състояния:
+
+  1. Преди да бъде пуснат - може да го бележим с `:pending`
   2. Минал - `:passed`
   3. Провалил се - `:failed`
   4. Пропуснат - `:skipped`
   5. Не минал за известно време - `:timed_out`
 
-## Какъв ще е интерфейсът на модула TestCase, който ще искаме от вас?
+## Функции, които TestSuite трябва да съдържа.
 
-Ще трябва да можем да създаваме нови тестове случаи с функцията `new`.
+#### TestSuite.new()
 
-Пример:
+Създава нов празен `TestSuite`, аналогично на `%TestSuite{}`
 
+```elixir
+TestSuite.new() == %TestSuite{}
+# => true
 ```
-TestCase.new
-```
+#### TestSuite.new(initial_tests)
+Създав на `TestSuite`, който съдържа всички тестове от `initial`.
 
-Като можем да подадем масив от тестове:
-
-```
+```elixir
 # Всеки тест е проста анонимна функция.
-f = fn -> 3 = 3 end
-g = fn -> 3 = 4 end
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
 
-TestCase.new([f, g])
+TestSuite.new([f, g])
 ```
 
-Ще трябва да можем да добавяме още тестове с функцията `add`:
+#### TestSuite.add(test_suite, tests):
+`test` е една анонимна функция или списък от няколко такив.
 
-```
-f = fn -> 3 = 3 end
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
 
-TestCase.new() |> TestCase.add(f)
-```
-
-Понякога имаме интеграционни тестове, които не искаме да ги пускаме с останалите, за това `add` ще приема опционални аргументи, с които можем да казваме дали да пропуснем някой тест.
-
-```
-f = fn -> .... very slow ... end
-
-TestCase.new() |> TestCase.add(f, skip: true)
+TestSuite.new() |> TestSuite.add(f)
+TestSuite.new() |> TestSuite.add([f, g])
 ```
 
-Също така да проверяваме колко теста имаме `size`:
+#### TestSuite.add(test_suite, tests, tags)
+
+Вторият параметър е същия, като при `TestSuite.add/2`.
+Третият съдържа списък от атоми или един атом, това са таговете на добавените тестове чрез тази функция.
+
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
+
+TestSuite.new() |> TestSuite.add(f, [:slow, :do_not_run])
+TestSuite.new() |> TestSuite.add([f, g], :maybe)
+```
+
+#### TestSuite.size(test_suite)
+
+Връща размера на TestSuite-а ():
 
 ```
-TestCase.new() |> TestCase.size()
+TestSuite.new() |> TestSuite.size()
 # => 0
+TestSuite.new([fn -> true end]) |> TestSuite.size()
+# => 1
+```
+
+#### TestSuite.size(test_suite, options)
+
+Връща борая на тестовете филтрирани чевз аргумента `options`.
+`options` e асоциативен списък, който може да съдържа следните "филтр":
+  - `:only` - ако има такава опция се връща броя на тестовете с даден таг
+
+```elixir
+TestSuite.new()
+|> TestSuite.add(fn -> true end, :always_true)
+|> TestSuite.add([fn -> false end, fn -> nil end], :never_true)
+|> TestSuite.size(only: :never_true)
+#=> 2
+```
+  - `:exclude` - ако има такава опция се връща броя на тестовете, които не съдържат даден таг
+
+```elixir
+TestSuite.new()
+|> TestSuite.add(fn -> true end, :always_true)
+|> TestSuite.add([fn -> false end, fn -> nil end], :never_true)
+|> TestSuite.size(exclude: :never_true)
+#=> 1
+```
+ - можем да комбинираме двете например:
+
+```elixir
+TestSuite.new()
+|> TestSuite.add(fn -> true end, :true)
+|> TestSuite.add(fn -> false end, :false)
+|> TestSuite.add(fn -> rem(:rand.uniform(), 2) == 0 end, [:true, :false])
+|> TestSuite.size(only: :true, exclude: :flase)
+#=> 1
 ```
 
 Ще трябва да можем да пускаме тестовете с функцията `run`:
 
-```
-f = fn -> 3 = 3 end
-g = fn -> 3 = 4 end
+#### TestSuite.run(test_suite, options \\ [])
 
-# Това ще го използваме нататък
-ran = TestCase.new()
-      |> TestCase.add(f)
-      |> TestCase.add(g)
-      |> TestCase.run()
-```
+Изпилнява тестовете и връща модифицирана `TestSuite` с информация за изпълнените тестове.
+Информация ще ни трябва по-нататък.
 
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
 
-Впрочем, казах ли, че можем да дадем време за изпълнение на всеки тест?
-
-```
-f = fn -> :timer.sleep(10_000) end
-
-TestCase.new([t]) |> TestCase.run(timeout: 5_000)
-# Накрая теста ни трябва да е в състояние timeout.
+TestSuite.new()
+|> TestSuite.add(f) # Ще бъде маркиран, като :passed
+|> TestSuite.add(g) # Ще бъде маркиран, като :failed
+|> TestSuite.run()
 ```
 
-Времето по подразбиране е *5 секунди*(като това в горния пример)
+Първите две опции са като при `TestSuite.size/2` (`:only`, `:exclude`), като всеки тест, който бъде филтриран не се изпълнява, а се маркира, катo `:skipped`
 
-Искаме да виждаме, кои тестове са минали с функцията `passed` - тя ще филтрира тестовете:
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
 
+TestSuite.new()
+|> TestSuite.add(f, :first) # Ще се изпълни
+|> TestSuite.add(g, :second) # Ще бъде маркиран, като пропуснат
+|> TestSuite.run(only: :first)
 ```
-TestCase.passed(ran) |> TestCase.size()
-# => 1
+
+Другата опция за изпълнението на тестовете е `:timeout` (тя има дефаултна стойност 5000 ms)
+
+Ако един тест работи повече от това време той бива маркиран, като `:timed_out`
+
+```elixir
+f = fn ->
+  Process.sleep(2000)
+  true
+end
+
+TestSuite.new()
+|> TestSuite.add(f) # Ще бъде маркиран, като :timed_out
+|> TestSuite.run(timeout: 500)
+
+TestSuite.new()
+|> TestSuite.add(f) # Ще бъде маркиран, като :passed
+|> TestSuite.run(timeout: 5000)
 ```
+Можем да run-нем `TestSuite`, който е върнат от `run`, в такъв случай ще изпълним само функциите, които не са маркирани, като `:passed`
 
 Всъщност се очаква да има фукции `timed_out`, `failed` и `skipped`, които правят същото като `passed`, но за съответните състояния.
 
-Искаме и функция `ran?`, която ни казва дали сме пускали тестовете на една структура:
+#### TestSuite.passed(test_suite)
+Връща нов `TestSuite` съдържащ само тезтовете, които са били изпълнени и са били успешни
 
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
+
+passed =
+TestSuite.new()
+|> TestSuite.add(f)
+|> TestSuite.add(g)
+|> TestSuite.run()
+|> TestSuite.passed()
+|> TestSuite.size()
+
+TestSuite.size(passed) # passed съдържа само "теста" f, който е отбелязана като :passed
+#=> 1
 ```
-TestCase.new |> TestCase.ran? # => false
-TestCase.ran?(ran) # => true
+#### TestSuite.failed(test_suite)
+#### TestSuite.timed_out(test_suite)
+#### TestSuite.skipped(test_suite)
+#### TestSuite.pending(test_suite)
+
+Последните 4 са аналогични на `TestSuite.passed/1`, но за съответните тест статуси.
+
+#### TestSuite.ran?(test_suite)
+
+Връща `true`, ако TestSuite-а е върнат от `TestSuite.run/2`
+
+```elixir
+TestSuite.new() |> TestSuite.ran?() # => false
+
+TestSuite.new() |> TestSuite.run() |> TestSuite.ran?() # => true
+
+TestSuite.new()
+|> TestSuite.run()
+|> TestSuite.add(fn -> true end)
+|> TestSuite.ran?() # => false
+```
+#### TestSuite.reset(test_suite)
+
+Връща нов `TestSuite` подобен на входния, само че всички тестове са отбелязани, като `:pending`.
+
+```elixir
+reset_suite =
+TestSuite.new(fn -> true end)
+|> TestSuite.run()
+|> TestSuite.reset()
+
+reset_suite
+|> TestSuite.size()
+#=> 1
+
+reset_suite
+|> TestSuite.pending()
+|> TestSuite.size()
+#=> 1
 ```
 
-Спомняте ли си протоколите? Супер. Понеже сме готини, искаме `inspect` да ни дава полезна информация за тестовете:
+### Протокола `Inspect`
 
-```
-t = TestCase.new()
+Трябва да имплементирате протокола [`Inspect`](https://hexdocs.pm/elixir/Inspect.html#content) за структурата `Dequue`
 
-inspect(t) #=> "#TestCase<0 tests>"
-```
+Когато "инспецтираме" един празен `TestSuite`, той трябва да получим следния резултат:
 
-Ако сме пускали тестовете, това ще изглежда по друг начин:
+```elixir
+t = TestSuite.new()
 
-```
-inspect(ran) #=> "#TestCase<2 tests:.F>"
+inspect(t) #=> "#TestSuite<0 tests>"
 ```
 
-Където всеки минал тест ще го показваме като ".", всеки провали се като "F", всеки пропуснат с "S", всеки, който не е минал за допустимо време - "T"
-Както виждаме - важен е редът, в който добавяме тестове!
+Ако имаме тестове нещата са малко по различни
+
+```elixir
+f = fn -> 3 == 3 end
+g = fn -> 3 == 4 end
+h = fn -> Process.sleep(1000) end
+j = fn -> true end
+
+test_suite =
+TestSuite.new()
+|> TestSuite.add(f)
+|> TestSuite.add(g)
+|> TestSuite.add(h)
+|> TestSuite.add(j, :skip)
+|> TestSuite.run(exclude: :skip, timeout: 500)
+|> TestSuite.add(fn -> nil end)
+|> inspect()
+
+inspect(test_suite)
+#=> "#TestSuite<5 tests:.FTSP>"
+```
+
+Където всеки успешен тест е отбелязан с ".", всеки провали се - с "F", всеки пропуснат - със "S", всеки, който не е минал за допустимо време - "T" и всеки още не е изпълнен - с "P"
+
+Реда в който показваме резултатите е същият в който са били добавени в `TestSuite`-a.
 
 # Бонус точки
 
-Накарайте тестовете да вървят конкурентно ;)
+Добавете опция на `:parallel` брой на тестове, които да се изпълняват кнкурентно.
+Имплементирайте схема за паралелизиране на тестовете.
