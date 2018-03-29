@@ -34,6 +34,6 @@ defmodule TestSuiteTest do
   test "that it implements inspect" do
     t = TestSuite.new()
 
-    assert inspect(t) =~ ~r/\A#TestCase<0 tests>/
+    assert inspect(t) =~ ~r/\A#TestSuite<0 tests>/
   end
 end
