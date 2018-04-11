@@ -101,7 +101,7 @@ TestSuite.new()
 |> TestSuite.add(fn -> true end, :true)
 |> TestSuite.add(fn -> false end, :false)
 |> TestSuite.add(fn -> rem(:rand.uniform(), 2) == 0 end, [:true, :false])
-|> TestSuite.size(only: :true, exclude: :flase)
+|> TestSuite.size(only: :true, exclude: :false)
 #=> 1
 ```
 #### TestSuite.run(test_suite, options \\\\ [])
