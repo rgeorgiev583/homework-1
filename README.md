@@ -25,7 +25,7 @@ TestSuite.new() == %TestSuite{}
 # => true
 ```
 #### TestSuite.new(initial_tests)
-Създав `TestSuite`, който съдържа всички тестове от `initial`.
+Създав `TestSuite`, който съдържа всички тестове от `initial_tests`.
 Ако тестовете са повече от един, то те се добавят в реда, в който ги виждаме. (Това ще е от значение по-нататък и важи също за следващата функция).
 
 ```elixir
@@ -37,7 +37,7 @@ TestSuite.new([f, g])
 ```
 
 #### TestSuite.add(test_suite, to_add):
-`=to_add` е една анонимна функция или списък от няколко такив.
+`to_add` е една анонимна функция или списък от няколко такив.
 
 ```elixir
 f = fn -> 3 == 3 end
@@ -63,7 +63,7 @@ TestSuite.new() |> TestSuite.add([f, g], :maybe)
 
 #### TestSuite.size(test_suite)
 
-Връща размера на TestSuite-а (борая на тестовете в ного).
+Връща размера на TestSuite-а (броя на тестовете в него).
 
 ```
 TestSuite.new() |> TestSuite.size()
@@ -74,8 +74,8 @@ TestSuite.new([fn -> true end]) |> TestSuite.size()
 
 #### TestSuite.size(test_suite, options)
 
-Връща борая на тестовете филтрирани чевз аргумента `options`.
-`options` e асоциативен списък, който може да съдържа следните "филтр":
+Връща броя на тестовете филтрирани чевз аргумента `options`.
+`options` e асоциативен списък, който може да съдържа следните "филтри":
   - `:only` - ако има такава опция се връща броя на тестовете с даден таг
 
 ```elixir
@@ -106,7 +106,7 @@ TestSuite.new()
 ```
 #### TestSuite.run(test_suite, options \\\\ [])
 
-Изпилнява тестовете и връща модифицирана `TestSuite` с информация за изпълнените тестове.
+Изпълнява тестовете и връща модифицирана `TestSuite` с информация за изпълнените тестове.
 Информация ще ни трябва по-нататък.
 
 ```elixir
@@ -154,7 +154,7 @@ TestSuite.new()
 Всъщност се очаква да има фукции `timed_out`, `failed` и `skipped`, които правят същото като `passed`, но за съответните състояния.
 
 #### TestSuite.passed(test_suite)
-Връща нов `TestSuite` съдържащ само тезтовете, които са били изпълнени и са били успешни
+Връща нов `TestSuite` съдържащ само тестовете, които са били изпълнени и са били успешни
 
 ```elixir
 f = fn -> 3 == 3 end
@@ -168,7 +168,7 @@ TestSuite.new()
 |> TestSuite.passed()
 |> TestSuite.size()
 
-TestSuite.size(passed) # passed съдържа само "теста" f, който е отбелязана като :passed
+TestSuite.size(passed) # passed съдържа само "теста" f, който е отбелязан като :passed
 #=> 1
 ```
 #### TestSuite.failed(test_suite)
