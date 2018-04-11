@@ -104,7 +104,7 @@ TestSuite.new()
 |> TestSuite.size(only: :true, exclude: :flase)
 #=> 1
 ```
-#### TestSuite.run(test_suite, options \\ [])
+#### TestSuite.run(test_suite, options \\\\ [])
 
 Изпилнява тестовете и връща модифицирана `TestSuite` с информация за изпълнените тестове.
 Информация ще ни трябва по-нататък.
